@@ -1,0 +1,61 @@
+=========
+Compiling
+=========
+
+make clean
+make
+
+=======
+Running
+=======
+
+Open two terminals.
+
+In one terminal type:
+
+./server <PORT NUMBER>
+
+In the other terminal type:
+
+./client <SERVER IP> <PORT NUMBER>
+
+Make sure that the port numbers for
+client and server match.
+
+The server will report the connection,
+the data sent to the client, and any
+status changes or errors.
+
+=======
+Example
+=======
+
+Note, the full output will be shown
+after both server and client have been
+deployed.
+
+Server terminal:
+
+-bash-2.05b$ ./server 1234
+Port  = 1234
+Waiting for somebody to connect on port 1234
+Connected!
+Sending: 1359971132
+Waiting for somebody to connect on port 1234
+
+
+Client terminal:
+
+-bash-2.05b$ ./client 127.0.0.1 1234
+The time received from the server: 1359971132
+Bytes read: 10
+
+
+
+======================
+Technical Information
+======================
+
+TCPLib.cpp implements functions that wrap standard read()/write()
+system calls. Please see comments for details. 
+
