@@ -6,89 +6,61 @@
 # *****************************************************
 
 import socket
+import typing
 
-# The port on which to listen
-listenPort = 1234
 
-# Create a welcome socket. 
-welcomeSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+class send_file_server:
+    def __init__(self, port: int = 1234, bytes_read: int = 10):
+        self.port = port
+        self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connection.bind(('', self.port))
+        self.connection.listen(1)
+        self.receive_buffer: typing.List[bytes] = []
+        self.temporary_buffer: typing.List[bytes] = []
+        self.bytes_read: int = bytes_read
 
-# Bind the socket to the port
-welcomeSock.bind(('', listenPort))
+    def receive_all(socket: socket.socket, buffer_size: int) -> None:
+        """
+        Receives the specified number of bytes
+        from the specified socket
+        @param socket - the socket from which to receive
+        @param buffer_size - the number of bytes to receive
+        @return - nothing
+        """
 
-# Start listening on the socket
-welcomeSock.listen(1)
+        # after calling this function, please use `self.receive_buffer`, it is supposed to be returned
 
-# ************************************************
-# Receives the specified number of bytes
-# from the specified socket
-# @param sock - the socket from which to receive
-# @param numBytes - the number of bytes to receive
-# @return - the bytes received
-# *************************************************
-def recvAll(sock, numBytes):
+        while(len(self.receive_buffer) < buffer_size):
+            if not (t := socket.recev(buffer_size)):
+                break
+            self.receive_buffer.append(t)
 
-	# The buffer
-	recvBuff = ""
-	
-	# The temporary buffer
-	tmpBuff = ""
-	
-	# Keep receiving till all is received
-	while len(recvBuff) < numBytes:
-		
-		# Attempt to receive bytes
-		tmpBuff =  sock.recv(numBytes)
-		
-		# The other side has closed the socket
-		if not tmpBuff:
-			break
-		
-		# Add the received bytes to the buffer
-		recvBuff += tmpBuff
-	
-	return recvBuff
-		
-# Accept connections forever
-while True:
-	
-	print "Waiting for connections..."
-		
-	# Accept connections
-	clientSock, addr = welcomeSock.accept()
-	
-	print "Accepted connection from client: ", addr
-	print "\n"
-	
-	# The buffer to all data received from the
-	# the client.
-	fileData = ""
-	
-	# The temporary buffer to store the received
-	# data.
-	recvBuff = ""
-	
-	# The size of the incoming file
-	fileSize = 0	
-	
-	# The buffer containing the file size
-	fileSizeBuff = ""
-	
-	# Receive the first 10 bytes indicating the
-	# size of the file
-	fileSizeBuff = recvAll(clientSock, 10)
-		
-	# Get the file size
-	fileSize = int(fileSizeBuff)
-	
-	print "The file size is ", fileSize
-	
-	# Get the file data
-	fileData = recvAll(clientSock, fileSize)
-	
-	print "The file data is: "
-	print fileData
-		
-	# Close our side
-	clientSock.close()
-	
+    def loop(self):
+        while True:
+            print("Waiting for connections...")
+            # Accept connections
+            client_socket, addr = self.connection.accept()
+
+            print(f"Accepted connection from client: {addr}")
+
+            # The buffer containing the file size
+            file_size_buffer = ""
+
+            # Receive the first 10 bytes indicating the
+            # size of the file
+            self.receive_all(client_socket, self.bytes_read)
+
+            # Get the file size
+            file_size = len(self.receive_buffer)
+            print(f"The file size is {file_size}")
+
+            # Get the file data
+            self.receive_all(client_socket, file_size)
+            print(f"The file data is: {self.receive_buffer}")
+
+            # Close our side
+            client_socket.close()
+
+
+SERV = send_file_server()
+SERV.loop()

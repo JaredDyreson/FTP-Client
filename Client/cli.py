@@ -73,11 +73,11 @@ class command_line_interface:
         """clean up the object once we're done"""
         # TODO: close port
         # terminate connection
-        #
+
         print(f"deleting object at {self}")
 
     def parse_args(self, arguments: typing.List[str]) -> typing.Callable:
-        def empty(): return None
+        def empty(): return None  # void function
 
         if len(arguments) > 2:
             print('Too many arguments. Type \'help\' for the command list')
@@ -133,10 +133,13 @@ def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "0"]):
 
     server_name, server_port = argv[1:]
     try:
-        server_port = int(server_port)
+        if((server_port := int(server_port) < 0)):
+            print(
+                f"[ERROR] Port number should not be negtive, received {server_port}")
+            return
     except ValueError:
         print(
-            f'[ERROR] Port should be number and non negative, received {server_port} of type {type(server_port)}')
+            f'[ERROR] Port should be number, received {server_port} of type {type(server_port)}')
         return
 
     cli = command_line_interface(
