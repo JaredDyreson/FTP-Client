@@ -69,8 +69,41 @@ class command_line_interface:
         print('help')
         print('quit')
 
-    def parse_args(self, arguments: typing.List[str]) -> None:
-        pass
+    def __del__(self):
+        """clean up the object once we're done"""
+        # TODO: close port
+        # terminate connection
+        #
+        print(f"deleting object at {self}")
+
+    def parse_args(self, arguments: typing.List[str]) -> typing.Callable:
+        def empty(): return None
+
+        if len(arguments) > 2:
+            print('Too many arguments. Type \'help\' for the command list')
+            return empty
+
+        prefix = arguments[0]
+
+        if prefix == 'get' and not self.missing_arg(arguments):
+            return functools.partial(self.get, arguments[1])
+
+        if prefix == 'put' and not self.missing_arg(arguments):
+            return functools.partial(self.put, arguments[1])
+
+        if prefix == 'ls':
+            return self.ls
+
+        if prefix == "help":
+            return self.cmd_list
+
+        if prefix == 'quit':
+            # NOTE: we can just call __del__ and put implementation there
+            # Note: we might need to listen to server response if we have to alert the server before disconnecting from it
+            return self.__del__
+        else:
+            print('Unknown command. Type \'help\' for the command list')
+            return empty
 
     def loop(self):
         """receives and executes commands on loop"""
@@ -87,30 +120,8 @@ class command_line_interface:
                 break
 
             # input is split per word and inserted into an array. It becomes like argv
-            command = command.split(' ')
-
-            if len(command) > 2:
-                print('Too many arguments. Type \'help\' for the command list')
-                continue
-
-            if command[0] == 'get':
-                if self.missing_arg(command):
-                    continue
-                self.get(command[1])
-            elif command[0] == 'put':
-                if self.missing_arg(command):
-                    continue
-                put(command[1], srvName, srvPort)
-            elif command[0] == 'ls':
-                self.ls()
-            elif command[0] == 'help':
-                self.cmd_list()
-            elif command[0] == 'quit':
-                # NOTE: we can just call __del__ and put implementation there
-                # Note: we might need to listen to server response if we have to alert the server before disconnecting from it
-                break
-            else:
-                print('Unknown command. Type \'help\' for the command list')
+            # each command is parsed  into a function that is invoked here
+            self.parse_args(command.split(' '))()
 
 
 def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "0"]):
