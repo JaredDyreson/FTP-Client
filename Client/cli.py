@@ -4,114 +4,149 @@ It receives commands from the user and sends/receives data to/from the server
 """
 
 
-import socket
 import os
+import socket
 import sys
+import typing
+import functools
+import pathlib
 
 
-def get(fName, sName, sPort):
-    """requests a file from the server"""
-    # TODO: send the 'get' command to the server over the 'control' channel
-    # TODO: listen to the 'control' channel for the server's response
-    # TODO: establish the 'data' channel
-    # TODO: prepare to receive the file's data over the 'data' channel
-    # TODO: close the 'data' channel
-    # TODO: write the data to a new file
-    print('get', fName, sName, sPort)
+class command_line_interface:
+    def __init__(self, server_name: str = "127.0.0.1", server_port: int = 0,
+                 directory: pathlib.Path = pathlib.Path('/tmp/build')):
+        if not(isinstance(server_name, str)
+               and isinstance(server_port, int)
+               and isinstance(directory, pathlib.Path)
+               and directory.is_dir()):
+            raise ValueError(
+                f'mismatched constructor: command_line_interface({list(locals().values())[1:]})')
+        self.server_name = server_name
+        self.server_port = server_port
+        self.directory = directory
 
-def put(fName, sName, sPort):
-    """sends a file to the server"""
-    # TODO: establish the 'data' channel
-    # TODO: send the file's data to the server over the 'data' channel
-    # TODO: listen to the 'control' channel for the server's response
-    # TODO: close the 'data' channel
-    print('put', fName, sName, sPort)
+    def get(self, file_name: str) -> None:
+        """requests a file from the server"""
+        # TODO: send the 'get' command to the server over the 'control' channel
+        # TODO: listen to the 'control' channel for the server's response
+        # TODO: establish the 'data' channel
+        # TODO: prepare to receive the file's data over the 'data' channel
+        # TODO: close the 'data' channel
+        # TODO: write the data to a new file
 
-def ls(sName, sPort):
-    """lists the files located at the server"""
-    # TODO: send the 'ls' command to the server over the 'control' channel
-    # TODO: listen to the 'control' channel for the server's response
-    # TODO: establish the 'data' channel
-    # TODO: prepare to receive the output over the 'data' channel
-    # TODO: close the 'data' channel
-    # TODO: display the output
-    print('listing files...', sName, sPort)
+        print(f'get [{file_name}]')
 
-def missing_arg(cmd):
-    """checks get and put commands for a missing argument"""
-    try:
-        if cmd[1] != '':
-            # argument exits and is not blank
-            return False
-    except IndexError:
-        pass
+    def put(self, file_name: str) -> None:
+        """sends a file to the server"""
+        # TODO: establish the 'data' channel
+        # TODO: send the file's data to the server over the 'data' channel
+        # TODO: listen to the 'control' channel for the server's response
+        # TODO: close the 'data' channel
 
-    print('Missing argument. Type \'help\' for the command list')
-    return True
+        print(f'put [{file_name}]')
 
-def cmd_list():
-    """prints out the list of available commands"""
-    print('get [file name]')
-    print('put [file name]')
-    print('ls')
-    print('help')
-    print('quit')
+    def ls(self):
+        """lists the files located at the server"""
+        # TODO: send the 'ls' command to the server over the 'control' channel
+        # TODO: listen to the 'control' channel for the server's response
+        # TODO: establish the 'data' channel
+        # TODO: prepare to receive the output over the 'data' channel
+        # TODO: close the 'data' channel
+        # TODO: display the output
 
-def command(srvName, srvPort):
-    """receives and executes commands on loop"""
-    # Note: loop might continue while the command is being executed. I've never done this so I wouldn't know.
-    # TODO: we could open/close the 'control' channel here and send the variable to each command function
-    #       OR we could have variable be global and open/close it in main()
-    #       OR we could open/close the channel in each command functuion (I feel like this way is wrong though)
+        print(f'ls [{self.directory}]')
 
-    while True:
-        command = input('ftp> ')
+    def missing_arg(self, cmd: typing.List[str]) -> bool:
+        """checks get and put commands for a missing argument"""
+        # NOTE: changed to just see if the length of the command is either 0 or 1
+        return 0 <= len(cmd) <= 1
 
-        # input is split per word and inserted into an array. It becomes like argv
-        command = command.split(' ')
-        
-        if len(command) > 2:
+    def cmd_list(self) -> None:
+        """prints out the list of available commands"""
+        print('get [file name]')
+        print('put [file name]')
+        print('ls')
+        print('help')
+        print('quit')
+
+    def __del__(self):
+        """clean up the object once we're done"""
+        # TODO: close port
+        # terminate connection
+
+        print(f"deleting object at {self}")
+
+    def parse_args(self, arguments: typing.List[str]) -> typing.Callable:
+        def empty(): return None  # void function
+
+        if len(arguments) > 2:
             print('Too many arguments. Type \'help\' for the command list')
-            continue
-        
-        if command[0] == 'get':
-            if missing_arg(command):
-                continue
-            get(command[1], srvName, srvPort)
-        elif command[0] == 'put':
-            if missing_arg(command):
-                continue
-            put(command[1], srvName, srvPort)
-        elif command[0] == 'ls':
-            ls(srvName, srvPort)
-        elif command[0] == 'help':
-            cmd_list()
-        elif command[0] == 'quit':
+            return empty
+
+        prefix = arguments[0]
+
+        if prefix == 'get' and not self.missing_arg(arguments):
+            return functools.partial(self.get, arguments[1])
+
+        if prefix == 'put' and not self.missing_arg(arguments):
+            return functools.partial(self.put, arguments[1])
+
+        if prefix == 'ls':
+            return self.ls
+
+        if prefix == "help":
+            return self.cmd_list
+
+        if prefix == 'quit':
+            # NOTE: we can just call __del__ and put implementation there
             # Note: we might need to listen to server response if we have to alert the server before disconnecting from it
-            break
+            return self.__del__
         else:
             print('Unknown command. Type \'help\' for the command list')
+            return empty
 
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: python " + sys.argv[0] + " <Server Domain Name> " + "<Server Port>")
-        return
-    
-    serverName = sys.argv[1]
-    serverPort = sys.argv[2]
+    def loop(self):
+        """receives and executes commands on loop"""
+        # Note: loop might continue while the command is being executed. I've never done this so I wouldn't know.
+        # TODO: we could open/close the 'control' channel here and send the variable to each command function
+        #       OR we could have variable be global and open/close it in main()
+        #       OR we could open/close the channel in each command functuion (I feel like this way is wrong though)
 
-    # check if server port number is valid
+        while True:
+            try:
+                command = input('ftp> ')
+            except EOFError:
+                # treat as quit
+                break
+
+            # input is split per word and inserted into an array. It becomes like argv
+            # each command is parsed  into a function that is invoked here
+            self.parse_args(command.split(' '))()
+
+
+def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "0"]):
+    if not(argv):
+        argv = sys.argv
+    if len(argv) != 3:
+        print(
+            f'Usage: python {argv[0]} <Server Domain Name> <Server Port>')
+
+    server_name, server_port = argv[1:]
     try:
-        serverPort = int(serverPort)
-        if serverPort < 0:
-            # raise error if port num is negative
-            int('a')
+        if((server_port := int(server_port) < 0)):
+            print(
+                f"[ERROR] Port number should not be negtive, received {server_port}")
+            return
     except ValueError:
-        print('Error: Port number is invalid. It must be a positive integer')
+        print(
+            f'[ERROR] Port should be number, received {server_port} of type {type(server_port)}')
         return
 
-    command(serverName, serverPort)
-    print('end of main')
+    cli = command_line_interface(
+        server_name=server_name, server_port=server_port)
+    cli.loop()
+
 
 if __name__ == '__main__':
     main()
+    # to have it use sys.argv, call `main([])`
