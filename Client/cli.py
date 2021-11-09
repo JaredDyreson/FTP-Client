@@ -13,12 +13,12 @@ import pathlib
 
 
 class command_line_interface:
-    def __init__(self, server_name: str = "127.0.0.1", server_port: int = 0,
+    def __init__(self, server_name: str = "127.0.0.1", server_port: int = 1233,
                  directory: pathlib.Path = pathlib.Path('/tmp/build')):
         if not(isinstance(server_name, str)
                and isinstance(server_port, int)
-               and isinstance(directory, pathlib.Path)
-               and directory.is_dir()):
+               and isinstance(directory, pathlib.Path)):
+        #       and directory.is_dir()):
             raise ValueError(
                 f'mismatched constructor: command_line_interface({list(locals().values())[1:]})')
         self.server_name = server_name
@@ -45,16 +45,55 @@ class command_line_interface:
 
         print(f'put [{file_name}]')
 
-    def ls(self):
+    def ls(self) -> None:
         """lists the files located at the server"""
-        # TODO: send the 'ls' command to the server over the 'control' channel
-        # TODO: listen to the 'control' channel for the server's response
-        # TODO: establish the 'data' channel
-        # TODO: prepare to receive the output over the 'data' channel
-        # TODO: close the 'data' channel
-        # TODO: display the output
+        # Temporary: the connection should be established outside of this function
+        conn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            conn_socket.connect((self.server_name, self.server_port))
+        except:
+            print('there is no server. this should not work')
+            return
 
-        print(f'ls [{self.directory}]')
+        # send the 'ls' command to the server over the 'control' channel
+        cmd_str = '1'
+        conn_socket.send(cmd_str.encode('utf-8'))
+
+        # receive the server's response. it should be 10 bytes and contain the the port number for the 'data' channel
+        print("Waiting for server response...")
+        data_port = int(self.receive_all(conn_socket, 10))
+        print(f'Connecting to the server on port {data_port}')
+
+        # connect to the server over 'data'
+        data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        data_socket.connect((self.server_name, data_port))
+
+        # receive the output over the 'data' channel
+        response_size = int(self.receive_all(data_socket, 10))
+        file_list: str = self.receive_all(data_socket, response_size)
+
+        # close the 'data' channel
+        data_socket.close()
+
+        # display the output
+        print(file_list)
+
+        # print(f'ls [{self.directory}]')
+
+    def receive_all(socket: socket.socket, buffer_size: int) -> str:
+        """
+        Receives the specified number of bytes
+        from the specified socket
+        @param socket - the socket from which to receive
+        @param buffer_size - the number of bytes to receive
+        @return - string
+        """
+        receiver_buffer: typing.List[bytes] = []
+        while len(receiver_buffer) < buffer_size:
+            if not (t := socket.recev(buffer_size)):
+                break
+            receiver_buffer.append(t)
+        return receiver_buffer.decode('utf-8')
 
     def missing_arg(self, cmd: typing.List[str]) -> bool:
         """checks get and put commands for a missing argument"""
@@ -124,7 +163,7 @@ class command_line_interface:
             self.parse_args(command.split(' '))()
 
 
-def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "0"]):
+def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "1234"]):
     if not(argv):
         argv = sys.argv
     if len(argv) != 3:
@@ -133,7 +172,7 @@ def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "0"]):
 
     server_name, server_port = argv[1:]
     try:
-        if((server_port := int(server_port) < 0)):
+        if((server_port := int(server_port)) < 0):
             print(
                 f"[ERROR] Port number should not be negtive, received {server_port}")
             return
