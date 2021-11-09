@@ -18,7 +18,7 @@ class command_line_interface:
         if not(isinstance(server_name, str)
                and isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
-        #       and directory.is_dir()):
+            #       and directory.is_dir()):
             raise ValueError(
                 f'mismatched constructor: command_line_interface({list(locals().values())[1:]})')
         self.server_name = server_name
@@ -184,8 +184,3 @@ def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "1234"]):
     cli = command_line_interface(
         server_name=server_name, server_port=server_port)
     cli.loop()
-
-
-if __name__ == '__main__':
-    main()
-    # to have it use sys.argv, call `main([])`
