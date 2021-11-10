@@ -23,9 +23,9 @@ def receive_all(socket: socket.socket) -> str:
     """
     try:
         if (size := int(receive_bytes(socket, 10))) < 0:
-            return f'{__name__} received the wrong message format. The message size was negative'
+            return f'receive_all() received the wrong message format from {socket}. The message size was negative'
     except:
-        return f'{__name__} received the wrong message format. The first 10 bytes must be the message\'s size'
+        return f'receive_all() received the wrong message format from {socket}. The first 10 bytes must be the message\'s size'
 
     return receive_bytes(socket, size)
 
