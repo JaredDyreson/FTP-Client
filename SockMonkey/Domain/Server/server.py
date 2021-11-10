@@ -23,8 +23,8 @@ class ftp_server:
                 f'mismatched constructor: ftp_server({list(locals().values())[1:]})')
         self.server_port = server_port
         self.directory = directory
-        self.control_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.control_sock.bind(('', self.server_port))
+        self.welcome_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.welcome_sock.bind(('', self.server_port))
 
     def get(self, file_name: str, control: socket.socket) -> None:
         """requests a file from the server"""
@@ -88,7 +88,7 @@ class ftp_server:
     def __del__(self):
         """clean up the object once we're done"""
         # close port
-        self.control_sock.close()
+        self.welcome_sock.close()
         print(f"deleting object at {self}")
 
     def parse_args(self, socket: socket.socket, command: int) -> typing.Callable:
@@ -137,10 +137,10 @@ class ftp_server:
 
     def loop(self):
         """receives and executes commands on loop"""
-        self.control_sock.listen(1)
+        self.welcome_sock.listen(1)
 
         print('Waiting for the client to connect...')
-        client_sock, addr = self.control_sock.accept()
+        control_sock, addr = self.welcome_sock.accept()
 
         print(f'Accepted connection from client {addr}')
 
@@ -148,13 +148,13 @@ class ftp_server:
             print('Waiting for commands from client...')
             
             # command should be an integer.
-            command_code = int(receive_all(client_sock))
+            command_code = int(receive_all(control_sock))
             print(f'received command code {command_code}')
 
             # each command is parsed  into a function that is invoked here
             # it will break when it returns None
             try:
-                self.parse_args(client_sock, command_code)()
+                self.parse_args(control_sock, command_code)()
             except TypeError:
                 break
 
