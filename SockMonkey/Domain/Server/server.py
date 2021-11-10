@@ -152,7 +152,7 @@ class ftp_server:
             print(f'received command code {command_code}')
 
             # each command is parsed  into a function that is invoked here
-            # it will break when it returns None
+            # it will break when self becomes None after deletion
             try:
                 self.parse_args(control_sock, command_code)()
             except TypeError:

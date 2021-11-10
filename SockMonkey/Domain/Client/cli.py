@@ -165,6 +165,7 @@ class command_line_interface:
 
             # input is split per word and inserted into an array. It becomes like argv
             # each command is parsed  into a function that is invoked here
+            # it will break when self becomes None after deletion
             try:
                 self.parse_args(command.split(' '))()
             except TypeError:
