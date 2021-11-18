@@ -10,7 +10,7 @@ import sys
 import typing
 import functools
 import pathlib
-from helpers import receive_all, send_all, send_err
+from SockMonkey.Domain.Server.helpers import receive_all, send_all, send_err
 
 
 class ftp_server:
@@ -61,7 +61,7 @@ class ftp_server:
         # create the data channel and bind it to an available port
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.bind(('', 0))
-        
+
         # listen
         data_socket.listen(1)
 
@@ -146,7 +146,7 @@ class ftp_server:
 
         while True:
             print('Waiting for commands from client...')
-            
+
             # command should be an integer.
             command_code = int(receive_all(control_sock))
             print(f'received command code {command_code}')
@@ -157,6 +157,7 @@ class ftp_server:
                 self.parse_args(control_sock, command_code)()
             except TypeError:
                 break
+
 
 def main(argv: typing.List[str] = ["server.py", "1234"]):
     if not(argv):
@@ -179,6 +180,7 @@ def main(argv: typing.List[str] = ["server.py", "1234"]):
     server = ftp_server(server_port=server_port)
     server.loop()
     print('DONE')
+
 
 if __name__ == '__main__':
     main()

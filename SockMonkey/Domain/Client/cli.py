@@ -10,7 +10,7 @@ import sys
 import typing
 import functools
 import pathlib
-from helpers import receive_all, send_all
+from SockMonkey.Domain.helpers import receive_all, send_all
 
 
 class command_line_interface:
@@ -171,6 +171,7 @@ class command_line_interface:
             except TypeError:
                 break
 
+
 def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "1234"]):
     if not(argv):
         argv = sys.argv
@@ -193,6 +194,7 @@ def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "1234"]):
         server_name=server_name, server_port=server_port)
     cli.loop()
     print('DONE')
+
 
 if __name__ == '__main__':
     main()
