@@ -75,8 +75,8 @@ class ftp_server:
         data, addrs = data_socket.accept()
 
         # store shell command
-        # file_list: str = os.popen("ls -l").read()
-        file_list = 'this is the file list'
+        file_list: str = os.popen("ls -l").read()
+        # file_list = 'this is the file list'
 
         # send the output over the 'data' channel
         send_all(data, file_list)
@@ -148,7 +148,11 @@ class ftp_server:
             print('Waiting for commands from client...')
 
             # command should be an integer.
-            command_code = int(receive_all(control_sock))
+            try:
+                command_code = int(receive_all(control_sock))
+            except ValueError:
+                print("[INFO] Attempting to exit gracefully....")
+
             print(f'received command code {command_code}')
 
             # each command is parsed  into a function that is invoked here

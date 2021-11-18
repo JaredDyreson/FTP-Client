@@ -119,7 +119,11 @@ class command_line_interface:
     def __del__(self):
         """clean up the object once we're done"""
         # tell the server to shut down
-        send_all(self.control, '4')
+        try:
+            send_all(self.control, '4')
+        except BrokenPipeError:
+            # server is not running but client is
+            pass
 
         # terminate connection
         self.control.close()
@@ -159,7 +163,7 @@ class command_line_interface:
         while True:
             try:
                 command = input('ftp> ')
-            except EOFError:
+            except (EOFError, KeyboardInterrupt):
                 # treat as quit
                 break
 
