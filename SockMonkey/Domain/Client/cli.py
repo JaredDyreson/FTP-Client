@@ -10,6 +10,7 @@ import sys
 import typing
 import functools
 import pathlib
+from SockMonkey.Domain.helpers import receive_all, send_all
 
 
 class command_line_interface:
@@ -24,76 +25,83 @@ class command_line_interface:
         self.server_name = server_name
         self.server_port = server_port
         self.directory = directory
+        self.control = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self.control.connect((self.server_name, self.server_port))
+        except:
+            print(
+                f'{self.server_name} on port {self.server_port} not found. Make sure to run the server before the client.')
+            sys.exit(1)
 
-    def get(self, file_name: str) -> None:
+    def get(self, file_name: str) -> int:
         """requests a file from the server"""
-        # TODO: send the 'get' command to the server over the 'control' channel
-        # TODO: listen to the 'control' channel for the server's response
-        # TODO: establish the 'data' channel
-        # TODO: prepare to receive the file's data over the 'data' channel
+        # send the 'get' command and file name to the server over the 'control' channel
+        send_all(self.control, '1')
+        send_all(self.control, file_name)
+
+        # listen to the 'control' channel for the server's response
+        response = receive_all(self.control)
+        if response == 'ERR':
+            err_msg = receive_all(self.control)
+            print(f'SERVER ERROR: {err_msg}')
+            return
+
+        # TODO: receive the port num for the 'data' channel over self.control
+        # TODO: connect to the server using the new port number. this is the data channel
+        # TODO: receive the file's data over the 'data' channel
         # TODO: close the 'data' channel
         # TODO: write the data to a new file
 
         print(f'get [{file_name}]')
 
-    def put(self, file_name: str) -> None:
+    def put(self, file_name: str) -> int:
         """sends a file to the server"""
-        # TODO: establish the 'data' channel
-        # TODO: send the file's data to the server over the 'data' channel
-        # TODO: listen to the 'control' channel for the server's response
-        # TODO: close the 'data' channel
+        send_all(self.control, '2')
+        send_all(self.control, file_name)
+
+        # listen to the 'control' channel for the server's response
+        response = receive_all(self.control)
+        if response == 'ERR':
+            err_msg = receive_all(self.control)
+            print(f'SERVER ERROR: {err_msg}')
+            return
+
+        # TODO: receive the port num for the 'data' channel over self.control
+        # TODO: connect to the server using the new port number. this is the data channel
+        # TODO: send the file's data over the 'data' channel
+        # TODO: close data and the file
 
         print(f'put [{file_name}]')
 
-    def ls(self) -> None:
+    def ls(self) -> int:
         """lists the files located at the server"""
-        # Temporary: the connection should be established outside of this function
-        conn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            conn_socket.connect((self.server_name, self.server_port))
-        except:
-            print('there is no server. this should not work')
+        # send the 'ls' command to the server over the 'control' channel
+        send_all(self.control, '3')
+
+        # server responds with OK if there are no errors
+        response = receive_all(self.control)
+        if response == 'ERR':
+            err_msg = receive_all(self.control)
+            print(f'SERVER ERROR: {err_msg}')
             return
 
-        # send the 'ls' command to the server over the 'control' channel
-        cmd_str = '1'
-        conn_socket.send(cmd_str.encode('utf-8'))
-
-        # receive the server's response. it should be 10 bytes and contain the the port number for the 'data' channel
-        print("Waiting for server response...")
-        data_port = int(self.receive_all(conn_socket, 10))
-        print(f'Connecting to the server on port {data_port}')
+        # receive the data port num
+        print("Receiving the data port number...")
+        data_port = int(receive_all(self.control))
 
         # connect to the server over 'data'
+        print(f'Connecting to the server on port {data_port}...')
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.connect((self.server_name, data_port))
 
         # receive the output over the 'data' channel
-        response_size = int(self.receive_all(data_socket, 10))
-        file_list: str = self.receive_all(data_socket, response_size)
+        file_list: str = receive_all(data_socket)
 
         # close the 'data' channel
         data_socket.close()
 
         # display the output
         print(file_list)
-
-        # print(f'ls [{self.directory}]')
-
-    def receive_all(socket: socket.socket, buffer_size: int) -> str:
-        """
-        Receives the specified number of bytes
-        from the specified socket
-        @param socket - the socket from which to receive
-        @param buffer_size - the number of bytes to receive
-        @return - string
-        """
-        receiver_buffer: typing.List[bytes] = []
-        while len(receiver_buffer) < buffer_size:
-            if not (t := socket.recev(buffer_size)):
-                break
-            receiver_buffer.append(t)
-        return receiver_buffer.decode('utf-8')
 
     def missing_arg(self, cmd: typing.List[str]) -> bool:
         """checks get and put commands for a missing argument"""
@@ -110,8 +118,11 @@ class command_line_interface:
 
     def __del__(self):
         """clean up the object once we're done"""
-        # TODO: close port
+        # tell the server to shut down
+        send_all(self.control, '4')
+
         # terminate connection
+        self.control.close()
 
         print(f"deleting object at {self}")
 
@@ -137,20 +148,14 @@ class command_line_interface:
             return self.cmd_list
 
         if prefix == 'quit':
-            # NOTE: we can just call __del__ and put implementation there
-            # Note: we might need to listen to server response if we have to alert the server before disconnecting from it
-            return self.__del__
+            # return self.__del__
+            del self
         else:
             print('Unknown command. Type \'help\' for the command list')
             return empty
 
     def loop(self):
         """receives and executes commands on loop"""
-        # Note: loop might continue while the command is being executed. I've never done this so I wouldn't know.
-        # TODO: we could open/close the 'control' channel here and send the variable to each command function
-        #       OR we could have variable be global and open/close it in main()
-        #       OR we could open/close the channel in each command functuion (I feel like this way is wrong though)
-
         while True:
             try:
                 command = input('ftp> ')
@@ -160,7 +165,11 @@ class command_line_interface:
 
             # input is split per word and inserted into an array. It becomes like argv
             # each command is parsed  into a function that is invoked here
-            self.parse_args(command.split(' '))()
+            # it will break when self becomes None after deletion
+            try:
+                self.parse_args(command.split(' '))()
+            except TypeError:
+                break
 
 
 def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "1234"]):
@@ -184,3 +193,9 @@ def main(argv: typing.List[str] = ["cli.py", "127.0.0.1", "1234"]):
     cli = command_line_interface(
         server_name=server_name, server_port=server_port)
     cli.loop()
+    print('DONE')
+
+
+if __name__ == '__main__':
+    main()
+    # to have it use sys.argv, call `main([])`
