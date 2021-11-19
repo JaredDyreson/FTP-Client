@@ -45,6 +45,24 @@ class command_line_interface:
             err_msg = receive_all(self.control)
             print(f'SERVER ERROR: {err_msg}')
             return
+        if not pathlib.Path(f'{self.directory}/{file_name}').is_file():
+            print(
+                f'[ERROR] Cannot download {file_name}, it does not exist on remote filesystem')
+            return
+
+        data_port = int(receive_all(self.control))
+
+        data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        data_socket.connect((self.server_name, data_port))
+
+        # receive the output over the 'data' channel
+        file_content: str = receive_all(data_socket)
+
+        with open(file_name, "w") as fp:
+            fp.writelines(file_content)
+
+        # close the 'data' channel
+        data_socket.close()
 
         # TODO: receive the port num for the 'data' channel over self.control
         # TODO: connect to the server using the new port number. this is the data channel
@@ -56,15 +74,19 @@ class command_line_interface:
 
     def put(self, file_name: str) -> int:
         """sends a file to the server"""
+
         send_all(self.control, '2')
         send_all(self.control, file_name)
 
         # listen to the 'control' channel for the server's response
         response = receive_all(self.control)
+
         if response == 'ERR':
             err_msg = receive_all(self.control)
             print(f'SERVER ERROR: {err_msg}')
             return
+
+        data_port = int(receive_all(self.control))
 
         # TODO: receive the port num for the 'data' channel over self.control
         # TODO: connect to the server using the new port number. this is the data channel
@@ -72,6 +94,16 @@ class command_line_interface:
         # TODO: close data and the file
 
         print(f'put [{file_name}]')
+
+        with open(file_name, "r") as fp:
+            contents = ''.join(fp.readlines())
+
+        data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        data_socket.connect((self.server_name, data_port))
+
+        send_all(data_socket, contents)
+
+        data_socket.close()
 
     def ls(self) -> int:
         """lists the files located at the server"""
