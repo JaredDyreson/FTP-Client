@@ -78,8 +78,7 @@ class command_line_interface:
         print(f'put [{file_name}]')
 
         with open(file_name, "r") as fp:
-            contents = '\n'.join(fp.readlines())
-            print(f"I want to send {contents}")
+            contents = ''.join(fp.readlines())
 
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.connect((self.server_name, data_port))

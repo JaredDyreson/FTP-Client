@@ -60,8 +60,8 @@ class ftp_server:
 
         data, addrs = data_socket.accept()
 
-        contents = receive_all(data)
-        print(contents)
+        with open(f'{self.directory}/{file_name}', "w") as fp:
+            fp.write(receive_all(data))
 
         data.close()
         data_socket.close()
