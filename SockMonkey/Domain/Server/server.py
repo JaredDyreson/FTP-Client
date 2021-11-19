@@ -31,6 +31,35 @@ class ftp_server:
         # tell the client that the command is OK
         send_all(control, 'OK')
 
+        # create the data channel and bind it to an available port
+        data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        data_socket.bind(('', 0))
+
+        # listen
+        data_socket.listen(1)
+
+        # store the port num as str
+        port_num = str(data_socket.getsockname()[1])
+
+        # send the data port num to client over control
+        send_all(control, port_num)
+
+        # wait for client to connect over data
+        data, addrs = data_socket.accept()
+
+        # store shell command
+        # our filesystem we have access to is /tmp/build , assuming linux
+        with open(f'{self.directory}/{file_name}') as fp:
+            content = ''.join(fp.readlines())
+        # file_list = 'this is the file list'
+
+        # send the output over the 'data' channel
+        send_all(data, content)
+
+        # close the 'data' channel
+        data.close()
+        data_socket.close()
+
         # TODO: create the data channel
         # TODO: send the data port number over control
         # TODO: wait for the client to connect
