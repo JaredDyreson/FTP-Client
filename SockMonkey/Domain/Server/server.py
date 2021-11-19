@@ -10,12 +10,13 @@ import sys
 import typing
 import functools
 import pathlib
+import tempfile
 from SockMonkey.Domain.Server.helpers import receive_all, send_all, send_err
 
 
 class ftp_server:
     def __init__(self, server_port: int = 1233,
-                 directory: pathlib.Path = pathlib.Path('/tmp/build')):
+                 directory: pathlib.Path = pathlib.Path(f'{tempfile.gettempdir()}/build')):
         if not(isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
             #       and directory.is_dir()):

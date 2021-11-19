@@ -10,12 +10,14 @@ import sys
 import typing
 import functools
 import pathlib
+import tempfile
+
 from SockMonkey.Domain.helpers import receive_all, send_all
 
 
 class command_line_interface:
     def __init__(self, server_name: str = "127.0.0.1", server_port: int = 1233,
-                 directory: pathlib.Path = pathlib.Path('/tmp/build')):
+                 directory: pathlib.Path = pathlib.Path(f'{tempfile.gettempdir()}/build')):
         if not(isinstance(server_name, str)
                and isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
