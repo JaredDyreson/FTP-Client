@@ -9,4 +9,4 @@ from SockMonkey.Domain.Server.server import main as server_main
 
 
 # cli_main()
-server_main()
+server_main([])
