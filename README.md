@@ -5,7 +5,7 @@ Contributors:
   - Mark Gonzalez -- mgon025@csu.fullerton.edu
   - Favian Velazquez -- chivista008@csu.fullerton.edu
   - Matthew Padden   --  Paddenmatt@csu.fullerton.edu
-  - name -- email
+  - Maria Medina -- rosemary98@csu.fullerton.edu
 
 Summary:
   - *What the code does*
