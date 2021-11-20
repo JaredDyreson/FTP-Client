@@ -18,7 +18,9 @@ How to run:
 - This program should be run using two separate terminal applications
     * First, run the server application by typing `python server.py <PORT NUMBER>`
     * The "PORT NUMBER" is the port where the server will bind to and **must** be non-negative
-    * In the second terminal window, run the following command `python client.py <PORT NUMBER>`, and both port numbers **must** be the same
+    * In the second terminal window, run the following command `python client.py "127.0.0.1" <PORT NUMBER>`, and both port numbers **must** be the same
+    * "127.0.0.1" is the IP address of `localhost` and this is how all traffic is routed. 
+    * This can be applied possibly to running the server on a separate machine  and the client can connect to it over the internet but that is beyond the scope of this project.
     * The client will then bind to the sever instantiated in the previous steps
     * You now have access to the following commands with their arguments:
         + ls
