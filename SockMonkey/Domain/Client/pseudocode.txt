@@ -1,0 +1,83 @@
+# ls() pseudocode
+def ls(self) -> int:
+
+    send_all(self.control, '3')
+
+    set response equal to receive_all(self.control)
+
+    if response is equal to ERR:
+        set err_msg equal to receive_all(self.control)
+        print error message
+        return
+
+    print receiving mesage 
+    set data_port equal to int(receive_all(self.control))
+
+    print connecting message
+    set data_socket equal to socket.socket(ADDRESS_FORMAT, TCP_SOCKET)
+    data_socket.connect((SERVER_NAME, DATA_PORT))
+
+    set file_list equal to receive_all(data_socket)
+
+    close data_socket
+
+    print file_list
+
+
+# get() pseudocode
+def get(self, FILE_NAME) -> int:
+
+    send_all(self.control, '1')
+    send_all(self.control, FILE_NAME)
+
+    set response equal to receive_all(self.control)
+    if response is equal to ERR:
+        set err_msg equal to receive_all(self.control)
+        print error message
+        return
+
+    if directory/file does not exist:
+        print does not exist error message
+        return
+
+    set data_port equal to int(receive_all(self.control))
+
+    set data_socket equal to socket.socket(ADDRESS_FORMAT, TCP_SOCKET)
+    data_socket.connect((SERVER_NAME, DATA_PORT))
+
+    set file_list equal to receive_all(data_socket)
+
+    with open(FILE_NAME, "w") as fp:
+        fp.writelines(file_content)
+
+    close data_socket
+
+    print file_list
+
+
+# put() pseudocode
+def put(self, FILE_NAME: str) -> int:
+
+    send_all(self.control, '2')
+    send_all(self.control, FILE_NAME)
+
+    set response equal to receive_all(self.control)
+
+    if response is equal to ERR:
+        set err_msg equal to receive_all(self.control)
+        print error message
+        return
+
+    set data_port equal to int(receive_all(self.control))
+
+    print file name
+
+    with open(FILE_NAME, "r") as fp:
+        set contents equal to ''.join(fp.readlines())
+
+    set data_socket equal to socket.socket(ADDRESS_FORMAT, TCP_SOCKET)
+    data_socket.connect((SERVER_NAME, DATA_PORT))
+
+    send_all(data_socket, contents)
+
+    close data_socket
