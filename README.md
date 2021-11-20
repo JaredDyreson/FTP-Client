@@ -39,10 +39,12 @@ Here cases of example usage.
 
 ## Put
 
-...
+![Put Command](assets/02_Put_Command.png)
 
 ## Get
 
-...
+![Get Command](assets/03_Get_Command.png)
 
 ## List
+
+![List Command](assets/01_LS_Command.png)
