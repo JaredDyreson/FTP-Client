@@ -28,6 +28,9 @@ class command_line_interface:
         self.server_port = server_port
         self.directory = directory
         self.control = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if not self.directory.is_dir():
+            self.directory.mkdir()
+
         try:
             self.control.connect((self.server_name, self.server_port))
         except:
@@ -135,6 +138,7 @@ class command_line_interface:
         data_socket.close()
 
         # display the output
+        print(f'[INFO] Printing the contents of {self.directory}')
         print(file_list)
 
     def missing_arg(self, cmd: typing.List[str]) -> bool:

@@ -7,14 +7,16 @@ Contributors:
 - Matthew Padden   --  Paddenmatt@csu.fullerton.edu
 - Maria Medina -- rosemary98@csu.fullerton.edu
 
-Summary:
+# Summary
+
 - This program is client server program that provides a simple FTP application
 - It has the ability to:
     * List files in a remote file system
     * Retrieve (`get`) a file from a remote file system
     * Upload (`put`) a file on the local file system onto the remote file system
 
-How to run:
+# How to Run
+
 - This program should be run using two separate terminal applications
     * First, run the server application by typing `python server.py <PORT NUMBER>`
     * The "PORT NUMBER" is the port where the server will bind to and **must** be non-negative
@@ -29,3 +31,18 @@ How to run:
         + help
         + quit
 
+
+
+# Usage
+
+Here cases of example usage.
+
+## Put
+
+...
+
+## Get
+
+...
+
+## List
