@@ -23,7 +23,7 @@ def ls(self) -> int:
 
     print file_list
 
-
+###################################################################################################################################################
 # get() pseudocode
 def get(self, FILE_NAME) -> int:
 
@@ -54,7 +54,7 @@ def get(self, FILE_NAME) -> int:
 
     print file_list
 
-
+###################################################################################################################################################
 # put() pseudocode
 def put(self, FILE_NAME) -> int:
 
@@ -81,3 +81,71 @@ def put(self, FILE_NAME) -> int:
     send_all(data_socket, contents)
 
     close data_socket
+
+
+###################################################################################################################################################
+# recieve_all function pseudocode
+def receive_all(socket: socket.socket) -> str:
+    """
+    Receive the entire message from socket.
+    The first 10 bytes must indicate the size of the message.
+    """
+    try:
+        if (size := int(receive_bytes(socket, 10))) < 0:
+            return f'receive_all() received the wrong message format from {socket}. The message size was negative'
+    except:
+        return f'receive_all() received the wrong message format from {socket}. The first 10 bytes must be the message\'s size'
+
+    return receive_bytes(socket, size)
+
+# pseudocode
+/*
+Recieves the messsage from the socket and the first 10 bytes of the message indicate the size
+	If size of the message recieved is of size 10 but less than 0 then
+	an error message is returned.
+
+	If the recieved message does not fit the condition of the previous error then
+	it returns another error if the first 10 bytes of the message was not its size.
+
+     If the message does not fit either conditions, then it implies the message was 
+     sent correctly and returns the recieved message
+*/
+
+
+
+###################################################################################################################################################
+# send_all function pseudocode
+
+def send_all(socket: socket.socket, msg: str, prepend: bool = True) -> None:
+    """
+    Sends msg encoded using utf-8 over socket.
+    @prepend - msg should be prepended with its size (size is padded to 10 bytes)
+    @return - the num of bytes sent
+    """
+    if prepend:
+        msg = prepend_size(msg)
+
+    bytes_sent = 0
+
+    # keep sending until all the data is sent
+    while len(msg) > bytes_sent:
+        bytes_sent += socket.send(msg[bytes_sent:].encode('utf-8'))
+        
+        
+# pseudocode
+/*
+Sends the message encoded using utf-8 over the socket
+
+If the message is prepend
+	then msg is the size of prepend_size(msg)
+        bytes_sent is then set to 0
+	
+	Loop is then initiated to keep sending until all data is sent
+	While the length of the message is greater than the bytes_sent, continue looping
+
+	The count of bytes_sent is incremented as every msg byte is encoded and sent out.
+	This is to keep track of the order in which the bytes were send out
+
+*/
+
+
