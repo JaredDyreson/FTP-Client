@@ -3,7 +3,7 @@ This file controls the ftp client
 It receives commands from the user and sends/receives data to/from the server
 """
 
-
+import os
 import socket
 import sys
 import typing
@@ -79,9 +79,11 @@ class command_line_interface:
                 print(err_msg)
                 return
 
+
+        # .basename() is in case file_name is a path to a file
         # send command code and file name
         send_all(self.control, '2')
-        send_all(self.control, file_name)
+        send_all(self.control, os.path.basename(file_name))
 
         # listen to the 'control' channel for the server's response
         response = receive_all(self.control)
@@ -98,12 +100,10 @@ class command_line_interface:
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.connect((self.server_name, data_port))
 
-
         print(f'Reading [{file_name}]...')
         with open(file_name, "r") as fp:
             contents = ''.join(fp.readlines())
-
-
+        
         print(f'Sending...')
         send_all(data_socket, contents)
 

@@ -34,6 +34,16 @@ class ftp_server:
 
     def get(self, file_name: str, control: socket.socket) -> None:
         """sends a file to the client"""
+
+        # check if the file exists
+        if not pathlib.Path(f'{self.directory}/{file_name}').is_file():
+            err_msg = (
+                f'{file_name} does not exist. Path = {self.directory}'
+            )
+            send_err(control, err_msg)
+            print(err_msg)
+            return
+        
         # tell the client that the command is OK
         send_all(control, 'OK')
 
@@ -150,16 +160,6 @@ class ftp_server:
         # get
         if command == 1:
             file_name = receive_all(socket)
-
-            if not pathlib.Path(f'{self.directory}/{file_name}').is_file():
-                err_msg = (
-                    f'{file_name} does not exist. Path = {self.directory}'
-                )
-                send_err(socket, err_msg)
-                print(err_msg)
-                return empty
-            
-            print(file_name, socket)
 
             return functools.partial(self.get, file_name, socket)
 
