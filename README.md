@@ -19,6 +19,9 @@ Contributors:
 
 - Client
     * This directory (CS-471-Project)
+    * Relative paths are also supported for put()
+        + For example, ftp> put ../another_folder/another_file.txt
+        + OR ftp> put ./pseudocode/client_pseudocode.txt
 - Server
     * /tmp/build
     * This directory will be created by the server if it does not exist.
