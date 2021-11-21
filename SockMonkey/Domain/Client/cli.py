@@ -12,12 +12,12 @@ import functools
 import pathlib
 import tempfile
 
-from SockMonkey.Domain.helpers import receive_all, send_all
+from SockMonkey.Domain.Client.helpers import receive_all, send_all
 
 
 class command_line_interface:
     def __init__(self, server_name: str = "127.0.0.1", server_port: int = 1233,
-                 directory: pathlib.Path = pathlib.Path(f'{tempfile.gettempdir()}/build')):
+                 directory: pathlib.Path = pathlib.Path.cwd()):
         if not(isinstance(server_name, str)
                and isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
@@ -28,9 +28,7 @@ class command_line_interface:
         self.server_port = server_port
         self.directory = directory
         self.control = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if not self.directory.is_dir():
-            self.directory.mkdir()
-
+        
         try:
             self.control.connect((self.server_name, self.server_port))
         except:
@@ -48,38 +46,43 @@ class command_line_interface:
         response = receive_all(self.control)
         if response == 'ERR':
             err_msg = receive_all(self.control)
-            print(f'SERVER ERROR: {err_msg}')
-            return
-        if not pathlib.Path(f'{self.directory}/{file_name}').is_file():
-            print(
-                f'[ERROR] Cannot download {file_name}, it does not exist on remote filesystem')
+            print(f'[SERVER ERROR] {err_msg}')
             return
 
+        print("Receiving the data port number...")
         data_port = int(receive_all(self.control))
 
+        print(f'Connecting to the server on port {data_port}...')
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.connect((self.server_name, data_port))
 
         # receive the output over the 'data' channel
+        print(f'Receiving [{file_name}]...')
         file_content: str = receive_all(data_socket)
 
+
+        print(f'Writing...')
         with open(file_name, "w") as fp:
             fp.writelines(file_content)
+
+        print(f'[{file_name}] has been written to {self.directory}')
 
         # close the 'data' channel
         data_socket.close()
 
-        # TODO: receive the port num for the 'data' channel over self.control
-        # TODO: connect to the server using the new port number. this is the data channel
-        # TODO: receive the file's data over the 'data' channel
-        # TODO: close the 'data' channel
-        # TODO: write the data to a new file
-
-        print(f'get [{file_name}]')
-
     def put(self, file_name: str) -> int:
         """sends a file to the server"""
 
+        # check if the file exists in the current dir
+        if not pathlib.Path(f'{self.directory}/{file_name}').is_file():
+                err_msg = (
+                    f'[Client ERROR] File {file_name} does not exist. '
+                    f'Path = {self.directory}'
+                )
+                print(err_msg)
+                return
+
+        # send command code and file name
         send_all(self.control, '2')
         send_all(self.control, file_name)
 
@@ -88,25 +91,26 @@ class command_line_interface:
 
         if response == 'ERR':
             err_msg = receive_all(self.control)
-            print(f'SERVER ERROR: {err_msg}')
+            print(f'[SERVER ERROR] {err_msg}')
             return
 
+        print("Receiving the data port number...")
         data_port = int(receive_all(self.control))
 
-        # TODO: receive the port num for the 'data' channel over self.control
-        # TODO: connect to the server using the new port number. this is the data channel
-        # TODO: send the file's data over the 'data' channel
-        # TODO: close data and the file
-
-        print(f'put [{file_name}]')
-
-        with open(file_name, "r") as fp:
-            contents = ''.join(fp.readlines())
-
+        print(f'Connecting to the server on port {data_port}...')
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.connect((self.server_name, data_port))
 
+
+        print(f'Reading [{file_name}]...')
+        with open(file_name, "r") as fp:
+            contents = ''.join(fp.readlines())
+
+
+        print(f'Sending...')
         send_all(data_socket, contents)
+
+        print(f'[{file_name}] has been sent!')
 
         data_socket.close()
 
@@ -119,7 +123,7 @@ class command_line_interface:
         response = receive_all(self.control)
         if response == 'ERR':
             err_msg = receive_all(self.control)
-            print(f'SERVER ERROR: {err_msg}')
+            print(f'[SERVER ERROR] {err_msg}')
             return
 
         # receive the data port num
@@ -131,14 +135,19 @@ class command_line_interface:
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.connect((self.server_name, data_port))
 
+
         # receive the output over the 'data' channel
+        print("Receiving the file list...")
         file_list: str = receive_all(data_socket)
+
+        print("Receiving the list's directory...")
+        server_dir: str = receive_all(data_socket)
 
         # close the 'data' channel
         data_socket.close()
 
         # display the output
-        print(f'[INFO] Printing the contents of {self.directory}')
+        print(f'[INFO] Server path = {server_dir}')
         print(file_list)
 
     def missing_arg(self, cmd: typing.List[str]) -> bool:
