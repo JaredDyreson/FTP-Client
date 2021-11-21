@@ -15,6 +15,14 @@ Contributors:
     * Retrieve (`get`) a file from a remote file system
     * Upload (`put`) a file on the local file system onto the remote file system
 
+# Directories Used
+
+- Client
+    * This directory (CS-471-Project)
+- Server
+    * /tmp/build
+    * This directory will be created by the server if it does not exist.
+
 # How to Run
 
 - This program should be run using two separate terminal applications
