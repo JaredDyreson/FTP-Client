@@ -30,7 +30,7 @@ Contributors:
 
 - This program should be run using two separate terminal applications
     * First, run the server application by typing `python server.py <PORT NUMBER>`
-        + **NOTE** if python does not work, try using python3
+        + **NOTE:** if `python` does not work, try using `python3`
     * The "PORT NUMBER" is the port where the server will bind to and **must** be non-negative
     * In the second terminal window, run the following command `python client.py "127.0.0.1" <PORT NUMBER>`, and both port numbers **must** be the same
     * "127.0.0.1" is the IP address of `localhost` and this is how all traffic is routed. 
