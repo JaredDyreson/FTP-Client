@@ -10,15 +10,28 @@ Contributors:
 # Summary
 
 - This program is client server program that provides a simple FTP application
+- It is intended to be run using Python 3.8.10 and above
 - It has the ability to:
     * List files in a remote file system
     * Retrieve (`get`) a file from a remote file system
     * Upload (`put`) a file on the local file system onto the remote file system
 
+# Directories Used
+
+- Client
+    * This directory (CS-471-Project)
+    * Relative paths are also supported for `put`
+        + For example, ftp> put ../another_folder/another_file.txt
+        + OR ftp> put ./pseudocode/client_pseudocode.txt
+- Server
+    * /tmp/build
+    * This directory will be created by the server if it does not exist.
+
 # How to Run
 
 - This program should be run using two separate terminal applications
     * First, run the server application by typing `python server.py <PORT NUMBER>`
+        + **NOTE:** if `python` does not work, try using `python3`
     * The "PORT NUMBER" is the port where the server will bind to and **must** be non-negative
     * In the second terminal window, run the following command `python client.py "127.0.0.1" <PORT NUMBER>`, and both port numbers **must** be the same
     * "127.0.0.1" is the IP address of `localhost` and this is how all traffic is routed. 

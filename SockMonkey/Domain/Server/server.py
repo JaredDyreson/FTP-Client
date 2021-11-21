@@ -11,6 +11,7 @@ import typing
 import functools
 import pathlib
 import tempfile
+
 from SockMonkey.Domain.Server.helpers import receive_all, send_all, send_err
 
 
@@ -19,7 +20,6 @@ class ftp_server:
                  directory: pathlib.Path = pathlib.Path(f'{tempfile.gettempdir()}/build')):
         if not(isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
-            #       and directory.is_dir()):
             raise ValueError(
                 f'mismatched constructor: ftp_server({list(locals().values())[1:]})')
         self.server_port = server_port
@@ -27,8 +27,23 @@ class ftp_server:
         self.welcome_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.welcome_sock.bind(('', self.server_port))
 
+        if not self.directory.is_dir():
+            print(f'[INFO] Creating {self.directory}')
+            print('[INFO] This is where the server\'s files are located')
+            self.directory.mkdir()
+
     def get(self, file_name: str, control: socket.socket) -> None:
-        """requests a file from the server"""
+        """sends a file to the client"""
+
+        # check if the file exists
+        if not pathlib.Path(f'{self.directory}/{file_name}').is_file():
+            err_msg = (
+                f'{file_name} does not exist. Path = {self.directory}'
+            )
+            send_err(control, err_msg)
+            print(err_msg)
+            return
+        
         # tell the client that the command is OK
         send_all(control, 'OK')
 
@@ -43,6 +58,7 @@ class ftp_server:
         port_num = str(data_socket.getsockname()[1])
 
         # send the data port num to client over control
+        print(f"[SERVER] Sending the port of {port_num}")
         send_all(control, port_num)
 
         # wait for client to connect over data
@@ -50,27 +66,23 @@ class ftp_server:
 
         # store shell command
         # our filesystem we have access to is /tmp/build , assuming linux
+        print(f'[SERVER] Reading [{file_name}] from {self.directory}')
         with open(f'{self.directory}/{file_name}') as fp:
             content = ''.join(fp.readlines())
         # file_list = 'this is the file list'
 
         # send the output over the 'data' channel
+        print('[SERVER] Sending...')
         send_all(data, content)
+
+        print(f'[SERVER] [{file_name}] has been sent!')
 
         # close the 'data' channel
         data.close()
         data_socket.close()
 
-        # TODO: create the data channel
-        # TODO: send the data port number over control
-        # TODO: wait for the client to connect
-        # TODO: send the file over data
-        # TODO: close data and the file
-
-        print(f'get [{file_name}]')
-
     def put(self, file_name: str, control: socket.socket) -> None:
-        """sends a file to the server"""
+        """receives a file from the client"""
         # tell the client that the command is OK
         send_all(control, 'OK')
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -80,28 +92,22 @@ class ftp_server:
         data_socket.listen(1)
 
         # store the port num as str
-
         port_num = str(data_socket.getsockname()[1])
 
-        print(f"[SERVER] Sending the port of {port_num}")
-
         # send the data port num to client over control
+        print(f"[SERVER] Sending the port of {port_num}")
         send_all(control, port_num)
 
         data, addrs = data_socket.accept()
 
+        print("[SERVER] Writing...")
         with open(f'{self.directory}/{file_name}', "w") as fp:
             fp.write(receive_all(data))
 
+        print(f"[SERVER] [{file_name}] has been written to {self.directory}")
+
         data.close()
         data_socket.close()
-
-        # TODO: create the data channel
-        # TODO: send the data port number over control
-        # TODO: wait for the client to connect
-        # TODO: receive the file over data
-        # TODO: create and write the file
-        # TODO: close data and the file
 
     def ls(self, control: socket.socket) -> None:
         """lists the files located at the server"""
@@ -119,6 +125,7 @@ class ftp_server:
         port_num = str(data_socket.getsockname()[1])
 
         # send the data port num to client over control
+        print(f"[SERVER] Sending the port of {port_num}")
         send_all(control, port_num)
 
         # wait for client to connect over data
@@ -126,11 +133,16 @@ class ftp_server:
 
         # store shell command
         # our filesystem we have access to is /tmp/build , assuming linux
+        print(f'[SERVER] Getting the file list from {self.directory}')
         file_list: str = os.popen(f"ls -l {self.directory}").read()
         # file_list = 'this is the file list'
 
         # send the output over the 'data' channel
+        print(f"[SERVER] Sending...")
         send_all(data, file_list)
+        send_all(data, f'{self.directory}')
+
+        print('[SERVER] File list has been sent!')
 
         # close the 'data' channel
         data.close()
@@ -149,28 +161,11 @@ class ftp_server:
         if command == 1:
             file_name = receive_all(socket)
 
-            # TODO: check if file exists
-            # This is an example fail case
-            if file_name == 'getfail.txt':
-                err_msg = f'{file_name} does not exist'
-                send_err(socket, err_msg)
-                print(err_msg)
-                return empty
-            print(file_name, socket)
-
             return functools.partial(self.get, file_name, socket)
 
         # put
         if command == 2:
             file_name = receive_all(socket)
-
-            # TODO: check if file exists
-            # This is an example fail case
-            if file_name == 'putfail.txt':
-                err_msg = f'{file_name} already exists.'
-                send_err(socket, err_msg)
-                print(err_msg)
-                return empty
 
             return functools.partial(self.put, file_name, socket)
 
