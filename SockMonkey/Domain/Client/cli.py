@@ -4,13 +4,11 @@ It receives commands from the user and sends/receives data to/from the server
 """
 
 
-import os
 import socket
 import sys
 import typing
 import functools
 import pathlib
-import tempfile
 
 from SockMonkey.Domain.Client.helpers import receive_all, send_all
 
@@ -21,7 +19,6 @@ class command_line_interface:
         if not(isinstance(server_name, str)
                and isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
-            #       and directory.is_dir()):
             raise ValueError(
                 f'mismatched constructor: command_line_interface({list(locals().values())[1:]})')
         self.server_name = server_name
@@ -152,7 +149,6 @@ class command_line_interface:
 
     def missing_arg(self, cmd: typing.List[str]) -> bool:
         """checks get and put commands for a missing argument"""
-        # NOTE: changed to just see if the length of the command is either 0 or 1
         return 0 <= len(cmd) <= 1
 
     def cmd_list(self) -> None:
@@ -199,7 +195,6 @@ class command_line_interface:
             return self.cmd_list
 
         if prefix == 'quit':
-            # return self.__del__
             del self
         else:
             print('Unknown command. Type \'help\' for the command list')

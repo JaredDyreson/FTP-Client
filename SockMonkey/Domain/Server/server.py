@@ -11,6 +11,7 @@ import typing
 import functools
 import pathlib
 import tempfile
+
 from SockMonkey.Domain.Server.helpers import receive_all, send_all, send_err
 
 
@@ -19,7 +20,6 @@ class ftp_server:
                  directory: pathlib.Path = pathlib.Path(f'{tempfile.gettempdir()}/build')):
         if not(isinstance(server_port, int)
                and isinstance(directory, pathlib.Path)):
-            #       and directory.is_dir()):
             raise ValueError(
                 f'mismatched constructor: ftp_server({list(locals().values())[1:]})')
         self.server_port = server_port
@@ -47,25 +47,22 @@ class ftp_server:
         # store the port num as str
         port_num = str(data_socket.getsockname()[1])
 
-        print(f"[SERVER] Sending the port of {port_num}")
-
         # send the data port num to client over control
+        print(f"[SERVER] Sending the port of {port_num}")
         send_all(control, port_num)
 
         # wait for client to connect over data
         data, addrs = data_socket.accept()
 
-        print(f'[SERVER] Reading [{file_name}] from {self.directory}')
-
         # store shell command
         # our filesystem we have access to is /tmp/build , assuming linux
+        print(f'[SERVER] Reading [{file_name}] from {self.directory}')
         with open(f'{self.directory}/{file_name}') as fp:
             content = ''.join(fp.readlines())
         # file_list = 'this is the file list'
 
-        print('[SERVER] Sending...')
-
         # send the output over the 'data' channel
+        print('[SERVER] Sending...')
         send_all(data, content)
 
         print(f'[SERVER] [{file_name}] has been sent!')
@@ -75,7 +72,7 @@ class ftp_server:
         data_socket.close()
 
     def put(self, file_name: str, control: socket.socket) -> None:
-        """sends a file to the server"""
+        """receives a file from the client"""
         # tell the client that the command is OK
         send_all(control, 'OK')
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,18 +82,15 @@ class ftp_server:
         data_socket.listen(1)
 
         # store the port num as str
-
         port_num = str(data_socket.getsockname()[1])
 
-        print(f"[SERVER] Sending the port of {port_num}")
-
         # send the data port num to client over control
+        print(f"[SERVER] Sending the port of {port_num}")
         send_all(control, port_num)
 
         data, addrs = data_socket.accept()
 
         print("[SERVER] Writing...")
-
         with open(f'{self.directory}/{file_name}', "w") as fp:
             fp.write(receive_all(data))
 
@@ -120,24 +114,21 @@ class ftp_server:
         # store the port num as str
         port_num = str(data_socket.getsockname()[1])
 
-        print(f"[SERVER] Sending the port of {port_num}")
-
         # send the data port num to client over control
+        print(f"[SERVER] Sending the port of {port_num}")
         send_all(control, port_num)
 
         # wait for client to connect over data
         data, addrs = data_socket.accept()
 
-        print(f'[SERVER] Getting the file list from {self.directory}')
-
         # store shell command
         # our filesystem we have access to is /tmp/build , assuming linux
+        print(f'[SERVER] Getting the file list from {self.directory}')
         file_list: str = os.popen(f"ls -l {self.directory}").read()
         # file_list = 'this is the file list'
 
-        print(f"[SERVER] Sending...")
-
         # send the output over the 'data' channel
+        print(f"[SERVER] Sending...")
         send_all(data, file_list)
         send_all(data, f'{self.directory}')
 
