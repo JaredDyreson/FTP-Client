@@ -10,6 +10,7 @@ Contributors:
 # Summary
 
 - This program is client server program that provides a simple FTP application
+- It is intended to be run using Python 3.8.10 and above
 - It has the ability to:
     * List files in a remote file system
     * Retrieve (`get`) a file from a remote file system
